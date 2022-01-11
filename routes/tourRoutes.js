@@ -4,7 +4,7 @@ const tourController = require("./../controllers/tourController");
 const router = express.Router();
 
 // Param Middleware (keyword is 'param', not 'use' but it is a middleware)
-router.param("id", tourController.checkID);
+// router.param("id", tourController.checkID);
 
 router
   .route("/")
