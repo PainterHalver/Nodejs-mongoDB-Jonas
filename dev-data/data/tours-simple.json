@@ -30,7 +30,6 @@
     "images": ["tour-2-1.jpg", "tour-2-2.jpg", "tour-2-3.jpg"],
     "startDates": ["2021-06-19,10:00", "2021-07-20,10:00", "2021-08-18,10:00"]
   },
-
   {
     "id": 2,
     "name": "The Snow Adventurer",
