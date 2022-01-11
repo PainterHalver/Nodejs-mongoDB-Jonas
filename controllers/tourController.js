@@ -2,8 +2,32 @@ const Tour = require("./../models/tourModel");
 
 exports.getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    // BUILD QUERY SO WE CAN CHAIN METHODS
+    // 1. FILTERING
+    const queryObj = { ...req.query };
+    const excludedFields = ["page", "sort", "limit", "fields"];
+    excludedFields.forEach((e) => {
+      delete queryObj[e];
+    });
 
+    // 2. ADVANCED FILTERING
+    // filter object in plain mongoDB:
+    // { difficulty: 'easy', duration: { $gte: 5 } }
+    // req.query of 127.0.0.1:3000/api/v1/tours/?duration[gte]=5&difficulty=easy
+    // { difficulty: 'easy', duration: { gte: 5 } }
+    // so we just need to replace operators like 'gte' with '$gte', HERE BE REGEX :)
+    // gte, gt, lte, lt
+    const queryString = JSON.stringify(queryObj).replace(
+      /\b(gte|gt|lte|lt)\b/g,
+      (matchedString) => `$${matchedString}`
+    );
+
+    const query = Tour.find(JSON.parse(queryString));
+
+    // EXECUTE QUERY WITH 'await'
+    const tours = await query;
+
+    // SEND RESPONSE
     res.status(200).json({
       status: "success",
       results: tours.length,
