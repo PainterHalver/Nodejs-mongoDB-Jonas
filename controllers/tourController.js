@@ -110,3 +110,98 @@ exports.deleteTour = async (req, res) => {
     });
   }
 };
+
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $match: { ratingsAverage: { $gte: 4.5 } },
+      },
+      {
+        $group: {
+          // _id: null,
+          _id: "$difficulty",
+          num: { $sum: 1 },
+          numRatings: { $sum: "$ratingsQuantity" },
+          avgRating: { $avg: "$ratingsAverage" },
+          avgPrice: { $avg: "$price" },
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
+      {
+        $sort: { avgPrice: 1 }, // ASC
+      },
+      // match a second time
+      // {
+      //   $match: { _id: { $ne: "easy" } },
+      // },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        stats,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year * 1;
+    const plan = await Tour.aggregate([
+      {
+        $unwind: "$startDates", // Flat the array 'startDates' and create 1 document for each
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$startDates" }, // $month is mongodb method
+          numTourStarts: { $sum: 1 },
+          tours: { $push: "$name" }, // $push create an array of 'name'
+        },
+      },
+      {
+        $addFields: { month: "$_id" }, // add fields in result
+      },
+      {
+        $project: {
+          // choose to show or hide fields
+          _id: 0,
+        },
+      },
+      {
+        $sort: { numTourStats: -1 },
+      },
+      {
+        $limit: 12, // just a reference
+      },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      results: plan.length,
+      data: {
+        plan,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
