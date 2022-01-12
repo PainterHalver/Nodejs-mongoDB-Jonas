@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 const tourSchema = new mongoose.Schema(
   {
     name: {
@@ -7,6 +8,7 @@ const tourSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    slug: String,
     duration: {
       type: Number,
       required: [true, "A tour must have a duration"],
@@ -62,9 +64,27 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
-// Add virtual properties to Schema
+// Add virtual properties to Schema.
+// callback must be function() {} for 'this' keyword
+// virtual cannot be accessed in controllers
 tourSchema.virtual("durationWeeks").get(function () {
+  // 'this' is the document
   return this.duration / 7;
+});
+
+// pre hook (mongoose middleware)
+// callback must be function() {} for 'this' keyword
+// 'save' hook is only for .save() and .create() not for .createMany() or findBy..AndUpdate()
+tourSchema.pre("save", function (next) {
+  // 'this' is the currently saving document ()
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
+
+// post hook
+tourSchema.post("save", function (doc, next) {
+  // no longer have 'this' but now we have 'doc'
+  next();
 });
 
 module.exports = mongoose.model("Tour", tourSchema);
