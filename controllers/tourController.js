@@ -35,6 +35,14 @@ exports.getAllTours = async (req, res) => {
       query = query.sort("-createdAt");
     }
 
+    // 3. FIELD LIMITING
+    if (req.query.fields) {
+      query = query.select(req.query.fields.split(",").join(" ")); // query.select('name duration price')
+    } else {
+      // default (ex hide '__v')
+      query = query.select("-__v");
+    }
+
     // EXECUTE QUERY WITH 'await'
     const tours = await query;
 
