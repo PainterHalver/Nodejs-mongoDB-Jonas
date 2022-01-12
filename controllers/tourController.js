@@ -1,16 +1,17 @@
+const { listeners } = require("./../models/tourModel");
 const Tour = require("./../models/tourModel");
 
 exports.getAllTours = async (req, res) => {
   try {
     // BUILD QUERY SO WE CAN CHAIN METHODS
-    // 1. FILTERING
+    // 1A. FILTERING
     const queryObj = { ...req.query };
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((e) => {
       delete queryObj[e];
     });
 
-    // 2. ADVANCED FILTERING
+    // 1B. ADVANCED FILTERING
     // filter object in plain mongoDB:
     // { difficulty: 'easy', duration: { $gte: 5 } }
     // req.query of 127.0.0.1:3000/api/v1/tours/?duration[gte]=5&difficulty=easy
@@ -22,7 +23,17 @@ exports.getAllTours = async (req, res) => {
       (matchedString) => `$${matchedString}`
     );
 
-    const query = Tour.find(JSON.parse(queryString));
+    let query = Tour.find(JSON.parse(queryString));
+
+    // 2. SORTING
+    if (req.query.sort) {
+      // 127.0.0.1:3000/api/v1/tours/?sort=-price,ratingsAverage
+      const sortBy = req.query.sort.split(",").join(" ");
+      query = query.sort(sortBy); // query is a Query object in mongoose| == query.sort("price rating")
+    } else {
+      // default sorting
+      query = query.sort("-createdAt");
+    }
 
     // EXECUTE QUERY WITH 'await'
     const tours = await query;
