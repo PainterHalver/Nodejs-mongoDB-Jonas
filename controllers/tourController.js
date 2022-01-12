@@ -1,6 +1,13 @@
 const { listeners } = require("./../models/tourModel");
 const Tour = require("./../models/tourModel");
 
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = "5"; // has to be String
+  req.query.sort = "-ratingsAverage,price";
+  req.query.fields = "name,price,ratingsAverage,summary,difficulty";
+  next();
+};
+
 exports.getAllTours = async (req, res) => {
   try {
     // BUILD QUERY SO WE CAN CHAIN METHODS
