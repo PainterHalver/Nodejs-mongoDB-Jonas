@@ -43,6 +43,17 @@ exports.getAllTours = async (req, res) => {
       query = query.select("-__v");
     }
 
+    // 4. PAGINATION
+    // 127.0.0.1:3000/api/v1/tours/?page=2&limit=10
+    const page = +req.query.page || 1;
+    const limit = +req.query.limit || 100;
+    const skipValue = (page - 1) * limit;
+    query = query.skip(skipValue).limit(limit);
+    if (req.query.page) {
+      const toursLength = await Tour.countDocuments();
+      if (skipValue >= toursLength) throw new Error("This page doesn't exist!");
+    }
+
     // EXECUTE QUERY WITH 'await'
     const tours = await query;
 
