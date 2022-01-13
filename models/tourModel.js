@@ -67,7 +67,7 @@ const tourSchema = new mongoose.Schema(
 // Add virtual properties to Schema.
 // callback must be function() {} for 'this' keyword
 // virtual cannot be accessed in controllers
-tourSchema.virtual("durationWeeks").get(function () {
+tourSchema.virtual("durationWeeks").get(function() {
   // 'this' is the document
   return this.duration / 7;
 });
@@ -75,14 +75,14 @@ tourSchema.virtual("durationWeeks").get(function () {
 // pre hook (mongoose middleware)
 // callback must be function() {} for 'this' keyword
 // 'save' hook is only for .save() and .create() not for .createMany() or findBy..AndUpdate()
-tourSchema.pre("save", function (next) {
+tourSchema.pre("save", function(next) {
   // 'this' is the currently saving document ()
   this.slug = slugify(this.name, { lower: true });
   next();
 });
 
 // post hook
-tourSchema.post("save", function (doc, next) {
+tourSchema.post("save", function(doc, next) {
   // no longer have 'this' but now we have 'doc'
   next();
 });
