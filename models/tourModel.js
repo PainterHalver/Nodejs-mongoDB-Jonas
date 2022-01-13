@@ -56,6 +56,10 @@ const tourSchema = new mongoose.Schema(
       select: false,
     },
     startDates: [Date],
+    secretTour: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     // for virtual properties to showup when calling api
@@ -64,6 +68,7 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
+// DOCUMENT MIDDLEWARE
 // Add virtual properties to Schema.
 // callback must be function() {} for 'this' keyword
 // virtual cannot be accessed in controllers
@@ -84,6 +89,20 @@ tourSchema.pre("save", function(next) {
 // post hook
 tourSchema.post("save", function(doc, next) {
   // no longer have 'this' but now we have 'doc'
+  next();
+});
+
+// QUERY MIDDLEWARE
+// Create pre middleware for all hooks that starts with 'find' (find, findOne, findById...)
+tourSchema.pre(/^find/, function(next) {
+  // 'this' is the query
+  this.find({ secretTour: { $ne: true } });
+  this.start = Date.now();
+  next();
+});
+
+tourSchema.post(/^find/, function(docs, next) {
+  console.log(`Query tool ${Date.now() - this.start}ms!`);
   next();
 });
 
