@@ -14,6 +14,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   // specifically define to prevent signing up admin role
   // admin role is defined directly in mongodb atlas/compass...
   const newUser = await User.create({
+    role: req.body.role ? req.body.role : "user",
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
@@ -97,6 +98,21 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   // GRANT ACCESS TO THE PROTECTED ROUTE
-  req.user = currentUser;
+  req.user = currentUser; // for later use of restricting routes in middlewares stack with this middleware
   next();
 });
+
+// wrap the function to accept different arguments other than req,res,next
+exports.restrictTo = (...roles) => {
+  return function(req, res, next) {
+    // 'roles' is an array
+    if (!roles.includes(req.user.role)) {
+      // can only access req.user because we added it in the above middleware
+      return next(
+        new AppError("You do not have permission to perform this action!", 403)
+      ); // 403: forbidden
+    }
+
+    next();
+  };
+};
