@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -42,6 +43,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 });
 
 // Hash the password
@@ -53,6 +56,7 @@ userSchema.pre("save", async function(next) {
   next();
 });
 
+// THESE ARE CALLED "INSTANCE METHODS"
 // define method to use on all documents of schema
 // comparing hashed to non hashed passwords
 userSchema.methods.correctPasswordCheck = async function(
@@ -72,6 +76,18 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
     return changedTimestamp > JWTTimestamp; // true if password is changed after JWT is created (issued)
   }
   return false;
+};
+
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  // does not save into the database so we need to save it in the controller (specifically in forgotPassword function)
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 60 mins
+  return resetToken;
 };
 
 const User = mongoose.model("User", userSchema);
