@@ -78,7 +78,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // THE LAST 2 STEPS IS FOR WHEN JWT IS STOLEN AND SAY THE USER DELETED THE ACCOUNT OR CHANGED THE PASSWORD THEN THE STOLEN JWT SHOULD NOT BE VALID ANYMORE BECAUSE REMEMBER WE USE _id TO SIGN JWT
   // 3. Check if user still exists
-  const currentUser = User.findById(decoded.id);
+  const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     return next(
       new AppError("The user belonging to the token no longer exists", 401)
