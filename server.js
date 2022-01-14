@@ -5,9 +5,9 @@ dotenv.config({ path: "./config.env" });
 // Synchronous errors are "Uncaught exceptions"
 // console.log(undefined_variable)
 // Should be on top of any other code
-process.on("uncaughtException", (err) => {
+process.on("uncaughtException", (error) => {
   console.log("UNCAUGHT EXCEPTION! Shutting down...");
-  console.log(error.name, error.message);
+  console.log(error);
   process.exit(1);
 });
 
@@ -36,7 +36,7 @@ const server = app.listen(port, () => {
 // Unhandled rejected PROMISE only
 process.on("unhandledRejection", (error) => {
   console.log("UNHANDLED REJECTION! Shutting down...");
-  console.log(error.name, error.message);
+  console.log(error);
   // Finish pending tasks before shutting down
   server.close(() => {
     process.exit(1);
