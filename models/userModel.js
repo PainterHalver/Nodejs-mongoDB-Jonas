@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "A password is required!"],
     minlength: 8,
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -43,6 +44,16 @@ userSchema.pre("save", async function(next) {
   this.passwordConfirm = undefined; // no need anymore
   next();
 });
+
+// define method to use on all documents of schema
+// comparing hashed to non hashed passwords
+userSchema.methods.correctPasswordCheck = async function(
+  candidatePassword,
+  userPassword
+) {
+  // 'this' is document but this.password is not available because we do not select it in the schema
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 
 const User = mongoose.model("User", userSchema);
 
