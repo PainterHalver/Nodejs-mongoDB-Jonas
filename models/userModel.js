@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema({
       message: "Confirmation password does not match password!",
     },
   },
+  passwordChangedAt: Date,
 });
 
 // Hash the password
@@ -53,6 +54,17 @@ userSchema.methods.correctPasswordCheck = async function(
 ) {
   // 'this' is document but this.password is not available because we do not select it in the schema
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+    return changedTimestamp > JWTTimestamp; // true if password is changed after JWT is created (issued)
+  }
+  return false;
 };
 
 const User = mongoose.model("User", userSchema);
