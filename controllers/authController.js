@@ -14,6 +14,18 @@ const signToken = (id) => {
   });
 };
 
+const createAndSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: {
+      user,
+    },
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   // specifically define to prevent signing up admin role
   // admin role is defined directly in mongodb atlas/compass...
@@ -25,17 +37,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm,
   });
 
-  // jwt token to send to the user
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    // 201: created
-    status: "success",
-    token,
-    data: {
-      user: newUser,
-    },
-  });
+  createAndSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -55,11 +57,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3. Send jwt to client
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+  createAndSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -190,9 +188,30 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   // 3. update passwpordChangedAt property
   // 4. Log the user in, send jwt
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+  createAndSendToken(user, 200, res);
+});
+
+// Update password with old password (not forgetting password)
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1. Get user from database
+  // const token = req.headers.authorization.split(" ")[1];
+  // const id = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  const user = await User.findById(req.user.id).select("+password"); // req.user is available because of the 'protect' middleware
+  if (!user) {
+    return next(new AppError("No user found, token may be expired"));
+  }
+
+  // 2. Check if POSTed password is correct
+  const currentPassword = req.body.passwordCurrent;
+  if (!(await user.correctPasswordCheck(currentPassword, user.password))) {
+    return next(new AppError("Password is not correct!", 401));
+  }
+
+  // 3. If so. update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+
+  // 4. Log user in ,send JWT
+  createAndSendToken(user, 200, res);
 });
