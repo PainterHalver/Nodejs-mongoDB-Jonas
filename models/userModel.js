@@ -47,12 +47,15 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
 });
 
-// Hash the password
+// Hash the password everytime password is touched
 userSchema.pre("save", async function(next) {
   // only run if password is modified
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 12); // 12 is salt (cpu power cost), 12 is standard
   this.passwordConfirm = undefined; // no need anymore
+  if (!this.isNew) {
+    this.passwordChangedAt = Date.now() - 1000; // so that token is returned after password has been changed
+  }
   next();
 });
 
@@ -86,7 +89,7 @@ userSchema.methods.createPasswordResetToken = function() {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 60 mins
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 mins
   return resetToken;
 };
 

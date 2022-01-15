@@ -4,6 +4,9 @@ const User = require("./../models/userModel");
 const catchAsync = require("./../utils/catchAsync");
 const AppError = require("./../utils/appError");
 const sendEmail = require("./../utils/email");
+const { token } = require("morgan");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs/dist/bcrypt");
 
 const signToken = (id) => {
   return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -165,4 +168,31 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 });
 
-exports.resetPassword = (req, res, next) => {};
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  // 1. Get user based on the token
+  // The token sent in the URL is not encrypted
+  const resetToken = req.params.token;
+  const encryptedToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  const user = await User.findOne({ passwordResetToken: encryptedToken });
+
+  // 2. If token has not expired, and there is user, set the new password
+  if (!user || user.passwordResetexpires < Date.now()) {
+    return next(new AppError("No user found or token has expired!", 418));
+  }
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm; // validator will auto check
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save(); // must not update() but save() to run validators
+
+  // 3. update passwpordChangedAt property
+  // 4. Log the user in, send jwt
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: "success",
+    token,
+  });
+});
