@@ -82,6 +82,36 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      // GeoJSON needs at least type and coordinates
+      type: {
+        type: String,
+        default: "Point", // Polygon, Rectangle...
+        enum: ["Point"],
+      },
+      coordinates: [Number], // [longitude, latitude]
+      address: String,
+      description: String,
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: "Point",
+          enum: ["Point"],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId, // This is how we do referencing in mongoose
+        ref: "User",
+      },
+    ],
   },
   {
     // for virtual properties to showup when calling api
@@ -120,6 +150,14 @@ tourSchema.pre(/^find/, function(next) {
   // 'this' is the query
   this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
+  next();
+});
+
+tourSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: "guides",
+    select: "-__v -passwordChangedAt",
+  });
   next();
 });
 
