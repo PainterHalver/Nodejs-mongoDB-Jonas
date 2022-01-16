@@ -66,7 +66,7 @@ userSchema.pre("save", async function(next) {
 
 // remove inactive users from showing up
 userSchema.pre(/^find/, function(next) {
-  this.find({ active: { $ne: false } });
+  this.find({ active: { $ne: false } }); // how can this even work ??
   next();
 });
 
