@@ -129,6 +129,14 @@ tourSchema.virtual("durationWeeks").get(function() {
   return this.duration / 7;
 });
 
+// VIRTUAL POPULATE so we don't have to do child referencing and blow up 16mb limit
+tourSchema.virtual("reviews", {
+  ref: "Review", // What Model to find?
+  foreignField: "tour", // what field of Review model should we find?
+  localField: "_id", // what should be matched with the field 'tour' of Review model
+  // => find all and put them in reviews Array of Tour model as virtual
+});
+
 // pre hook (mongoose middleware)
 // callback must be function() {} for 'this' keyword
 // 'save' hook is only for .save() and .create() not for .createMany() or findBy..AndUpdate()
