@@ -45,6 +45,11 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
 });
 
 // Hash the password everytime password is touched
@@ -56,6 +61,12 @@ userSchema.pre("save", async function(next) {
   if (!this.isNew) {
     this.passwordChangedAt = Date.now() - 1000; // so that token is returned after password has been changed
   }
+  next();
+});
+
+// remove inactive users from showing up
+userSchema.pre(/^find/, function(next) {
+  this.find({ active: { $ne: false } });
   next();
 });
 
