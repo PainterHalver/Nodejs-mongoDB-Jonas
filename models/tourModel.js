@@ -120,6 +120,11 @@ const tourSchema = new mongoose.Schema(
   }
 );
 
+// INDEXING FOR SEARCH PERFORMANCE OF MOST USED QUERIES
+// tourSchema.index({ price: 1 });
+tourSchema.index({ price: 1, ratingsAverage: -1 }); // 1: ASC | -1: DESC (not so important)
+tourSchema.index({ slug: 1 });
+
 // DOCUMENT MIDDLEWARE
 // Add virtual properties to Schema.
 // callback must be function() {} for 'this' keyword
