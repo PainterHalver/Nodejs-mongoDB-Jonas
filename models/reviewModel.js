@@ -33,6 +33,9 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
+// An user cannot write multiple reviews for a tour
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
 // hooks must come before model
 reviewSchema.pre(/^find/, function(next) {
   this.populate({
