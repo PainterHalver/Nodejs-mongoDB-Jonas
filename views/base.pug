@@ -1,1 +1,25 @@
-h1 The Park Camper
+doctype html
+html
+    head
+        title Natours NodeJS Course
+        //- Normal html works fine
+        <meta charset='UTF-8' />
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        //- <link rel='stylesheet' href='style.css' /> 
+        //- inside parentheses should be single quote only        
+        link(rel='stylesheet' href='css/style.css')
+        link(rel='shortcut icon' type='image/png' href='img/favicon.png')
+        link(rel='stylesheet' href='https://fonts.googleapis.com/css?family=Lato:300,300i,700')
+        meta(charset='UTF-8')
+
+    body 
+        // HEADER
+        include _header
+
+        // CONTENT
+        block content
+            h1 This is a placeholder heading
+            p paragraph
+
+        // FOOTER
+        include _footer
