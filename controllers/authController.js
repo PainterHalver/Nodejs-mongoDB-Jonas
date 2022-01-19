@@ -40,6 +40,17 @@ const createAndSendToken = (user, statusCode, res) => {
   });
 };
 
+exports.logout = (req, res) => {
+  res.cookie("jwt", "", {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  });
+
+  res.status(200).json({
+    status: "success",
+  });
+};
+
 exports.signup = catchAsync(async (req, res, next) => {
   // specifically define to prevent signing up admin role
   // admin role is defined directly in mongodb atlas/compass...
@@ -121,32 +132,35 @@ exports.protect = catchAsync(async (req, res, next) => {
 });
 
 // Only for rendered pages, there will be no errors
-exports.isLoggedIn = catchAsync(async (req, res, next) => {
+exports.isLoggedIn = async (req, res, next) => {
   if (!req.cookies.jwt) {
     return next();
   }
+  try {
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
+    );
 
-  const decoded = await promisify(jwt.verify)(
-    req.cookies.jwt,
-    process.env.JWT_SECRET
-  );
+    // Check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next();
+    }
 
-  // Check if user still exists
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return next();
+    // Check if user changed password after jwt was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      // iat: issued at
+      return next();
+    }
+
+    // THERE IS A LOGGED IN USER IF WE GOT TO THIS POINT
+    res.locals.user = currentUser;
+    next();
+  } catch (err) {
+    next();
   }
-
-  // Check if user changed password after jwt was issued
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
-    // iat: issued at
-    return next();
-  }
-
-  // THERE IS A LOGGED IN USER IF WE GOT TO THIS POINT
-  res.locals.user = currentUser;
-  next();
-});
+};
 
 // wrap the function to accept different arguments other than req,res,next
 exports.restrictTo = (...roles) => {
