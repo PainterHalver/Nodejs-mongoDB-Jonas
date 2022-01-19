@@ -127,6 +127,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   // GRANT ACCESS TO THE PROTECTED ROUTE
+  res.locals.user = currentUser;
   req.user = currentUser; // for later use of restricting routes in middlewares stack with this middleware
   next();
 });

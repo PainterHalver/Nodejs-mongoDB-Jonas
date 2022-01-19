@@ -4,6 +4,8 @@ const authController = require("./../controllers/authController");
 
 const router = express.Router();
 
+router.get("/me", authController.protect, viewController.getAccount);
+
 // NOT REQUIRED TO LOGIN BUT JUST TO CHECK IF USER IS LOGGED IN OR NOT
 router.use(authController.isLoggedIn);
 
