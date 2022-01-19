@@ -13,8 +13,8 @@ const filterObj = (obj, ...allowedFields) => {
 
 exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
-  next()
-}
+  next();
+};
 
 exports.updateMe = catchAsync(async (req, res, next) => {
   // 1. Create error if user POSTs password data
@@ -33,7 +33,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   const filteredBody = filterObj(req.body, "name", "email");
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
-    runValidator: true, // only run for updated properties?
+    runValidators: true, // only run for updated properties?
   });
 
   res.status(200).json({
