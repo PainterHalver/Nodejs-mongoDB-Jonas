@@ -1,3 +1,4 @@
+const req = require("express/lib/request");
 const AppError = require("./../utils/appError");
 
 const handleCastErrorDB = (err) => {
@@ -24,31 +25,56 @@ const handleJWTError = (err) => {
 const handleJWTExpiredError = (err) =>
   new AppError("Your token has expired, please login again!", 401);
 
-const sendErrorDev = (error, res) => {
-  res.status(error.statusCode).json({
-    status: error.status,
-    error: error,
-    message: error.message,
-    stack: error.stack,
+const sendErrorDev = (error, req, res) => {
+  // API
+  if (req.originalUrl.startsWith("/api")) {
+    return res.status(error.statusCode).json({
+      status: error.status,
+      error: error,
+      message: error.message,
+      stack: error.stack,
+    });
+  }
+  console.error(`ERROR 💥:`, error);
+  // NOT API => RENDER ERROR TO WEBSITE
+  return res.status(error.statusCode).render("error", {
+    title: "Errors going wild :)",
+    msg: error.message,
   });
 };
 
-const sendErrorProd = (error, res) => {
-  if (error.isOperational) {
-    // isOperational is field of AppError class (trusted error)
-    res.status(error.statusCode).json({
-      status: error.status,
-      message: error.message,
-    });
-  } else {
+const sendErrorProd = (error, req, res) => {
+  // API
+  if (req.originalUrl.startsWith("/api")) {
+    if (error.isOperational) {
+      // isOperational is field of AppError class (trusted error)
+      return res.status(error.statusCode).json({
+        status: error.status,
+        message: error.message,
+      });
+    }
     // Unknown error, don't want to leak details
     // 1. Log error
     console.error(`ERROR 💥:`, error);
 
     // 2. Send generic message
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: "Something went soooo wrong!",
+    });
+  } else {
+    // RENDERED WEBSITE
+    if (error.isOperational) {
+      return res.status(error.statusCode).render("error", {
+        title: "Known errors going wild :)",
+        msg: error.message,
+      });
+    }
+    console.error(`ERROR 💥:`, error);
+
+    return res.status(error.statusCode).render("error", {
+      title: "Unknown errors going wild :)",
+      msg: "Please try again later",
     });
   }
 };
@@ -59,7 +85,7 @@ module.exports = (error, req, res, next) => {
   error.status = error.status || "error";
 
   if (process.env.NODE_ENV.trim() === "development") {
-    sendErrorDev(error, res);
+    sendErrorDev(error, req, res);
   } else if (process.env.NODE_ENV.trim() === "production") {
     let err = { ...error };
     // Get a tour error when id is not in _id shape
@@ -72,6 +98,6 @@ module.exports = (error, req, res, next) => {
     if (error.name === "JsonWebTokenError") err = handleJWTError(err);
     // jsonwebtoken expired
     if (error.name === "TokenExpiredError") err = handleJWTExpiredError(err);
-    sendErrorProd(err, res);
+    sendErrorProd(error, req, res);
   }
 };
