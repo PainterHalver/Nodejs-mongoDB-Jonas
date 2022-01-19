@@ -1,7 +1,38 @@
+const multer = require("multer");
 const AppError = require("../utils/appError");
 const User = require("./../models/userModel");
 const catchAsync = require("./../utils/catchAsync");
 const factory = require("./handlerFactory");
+
+const multerStorage = multer.diskStorage({
+  destination: (req, file, callback) => {
+    callback(null, "public/img/users");
+  },
+  filename: (req, file, callback) => {
+    // user-7451as41adavas4-51351531513.jpeg for unique
+    const extension = file.mimetype.split("/")[1];
+    callback(null, `user-${req.user.id}-${Date.now()}.${extension}`);
+  },
+});
+
+// filter image (make sure it is an image)
+const multerFilter = (req, file, callback) => {
+  if (file.mimetype.startsWith("image")) {
+    callback(null, true);
+  } else {
+    callback(
+      new AppError("Not an image! Please upload only images!", 400),
+      false
+    );
+  }
+};
+
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter,
+});
+
+exports.uploadUserPhoto = upload.single("photo");
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -31,6 +62,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   // not dealing with passwords => not run all validators
   // filter for malicous probkems like user can change role to admin
   const filteredBody = filterObj(req.body, "name", "email");
+  if (req.file) filteredBody.photo = req.file.filename; // change photo name in database
+
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true, // only run for updated properties?
