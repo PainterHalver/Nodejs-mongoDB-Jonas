@@ -25,40 +25,22 @@ exports.getTour = catchAsync(async (req, res, next) => {
     return next(new AppError("There is no tour with that name!", 404));
   }
 
-  res
-    .status(200)
-    .set(
-      "Content-Security-Policy",
-      "script-src 'self' https://* http://localhost:* 'unsafe-inline' 'unsafe-eval'"
-    )
-    .render("tour", {
-      title: tour.tour,
-      tour,
-    });
+  res.status(200).render("tour", {
+    title: tour.tour,
+    tour,
+  });
 });
 
 exports.getLoginForm = catchAsync(async (req, res, next) => {
-  res
-    .status(200)
-    .set(
-      "Content-Security-Policy",
-      "script-src 'self' https://* http://localhost:* 'unsafe-inline' 'unsafe-eval'"
-    )
-    .render("login", {
-      title: "Login",
-    });
+  res.status(200).render("login", {
+    title: "Login",
+  });
 });
 
 exports.getAccount = (req, res) => {
-  res
-    .status(200)
-    .set(
-      "Content-Security-Policy",
-      "script-src 'self' https://* http://localhost:* 'unsafe-inline' 'unsafe-eval'"
-    )
-    .render("account", {
-      title: "Your Account",
-    });
+  res.status(200).render("account", {
+    title: "Your Account",
+  });
 };
 
 exports.updateUserData = catchAsync(async (req, res, next) => {
@@ -71,14 +53,8 @@ exports.updateUserData = catchAsync(async (req, res, next) => {
     { new: true, runValidators: true }
   );
 
-  res
-    .status(200)
-    .set(
-      "Content-Security-Policy",
-      "script-src 'self' https://* http://localhost:* 'unsafe-inline' 'unsafe-eval'"
-    )
-    .render("account", {
-      title: "Your Account",
-      user: updatedUser,
-    });
+  res.status(200).render("account", {
+    title: "Your Account",
+    user: updatedUser,
+  });
 });
