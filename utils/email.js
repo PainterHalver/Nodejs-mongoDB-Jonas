@@ -1,43 +1,68 @@
 const nodemailer = require("nodemailer");
+const pug = require("pug");
+const { htmlToText } = require("html-to-text");
 
-const sendEmail = async (options) => {
-  // 1. Create a transporter (gmail/yahoo/....)
-  //   const transporter = nodemailer.createTransport({
-  //     service: "Gmail",
-  //     auth: {
-  //       user: process.env.GMAIL_USERNAME,
-  //       pass: process.env.GMAIL_PASSWORD,
-  //     },
-  //     // Activate in gmail "less secure app" option to be able to send
-  //     // Only 500 mails per day with gmail and can be spotted as spammer :)
-  //   });
+module.exports = class Email {
+  constructor(user, url) {
+    this.to = user.email;
+    this.firstName = user.name.split(" ")[0];
+    this.url = url;
+    this.from = `Calputer <${process.env.EMAIL_FROM}>`;
+  }
 
-  // Mailtrap traps the mail so that we can test mail sending
-  const transporter = nodemailer.createTransport({
-    // mailtrap is not in nodemailer so we have to define service and host
-    host: process.env.MAILTRAP_HOST,
-    port: process.env.MAILTRAP_PORT,
-    secureConnection: false, // TLS requires secureConnection to be false
-    auth: {
-      user: process.env.MAILTRAP_USERNAME,
-      pass: process.env.MAILTRAP_PASSWORD,
-    },
-    tls: {
-      ciphers: "SSLv3",
-    },
-  });
+  newTransport() {
+    if (process.env.NODE_ENV === "production") {
+      // Sendgrid
+      return 1;
+    }
 
-  // 2. Define email options
-  const mailOptions = {
-    from: "Calputer <test@example.com>",
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-    // html:
-  };
+    return nodemailer.createTransport({
+      // mailtrap is not in nodemailer so we have to define service and host
+      host: process.env.MAILTRAP_HOST,
+      port: process.env.MAILTRAP_PORT,
+      secureConnection: false, // TLS requires secureConnection to be false
+      auth: {
+        user: process.env.MAILTRAP_USERNAME,
+        pass: process.env.MAILTRAP_PASSWORD,
+      },
+      tls: {
+        ciphers: "SSLv3",
+      },
+    });
+  }
 
-  // 3. Send the mail
-  await transporter.sendMail(mailOptions);
+  async send(template, subject) {
+    // 1. Create html based on a pug template
+    const html = pug.renderFile(
+      `${__dirname}/../views/emails/${template}.pug`,
+      {
+        firstName: this.firstName,
+        url: this.url,
+        subject,
+      }
+    );
+
+    // 2. Define email options
+    const mailOptions = {
+      from: this.from,
+      to: this.to,
+      subject,
+      html,
+      text: htmlToText(html),
+    };
+
+    // 3. Create a transport and send email
+    await this.newTransport().sendMail(mailOptions);
+  }
+
+  async sendWelcome() {
+    await this.send("welcome", "Welcome to the Natours Family :)");
+  }
+
+  async sendPasswordReset() {
+    await this.send(
+      "passwordReset",
+      "Your password reset token (valid for about 10 minutes)"
+    );
+  }
 };
-
-module.exports = sendEmail;
