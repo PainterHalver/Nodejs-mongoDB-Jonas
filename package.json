@@ -63,5 +63,8 @@
     "stripe": "^8.198.0",
     "validator": "^13.7.0",
     "xss-clean": "^0.1.1"
+  },
+  "engines": {
+    "node": ">=10.0.0"
   }
 }
