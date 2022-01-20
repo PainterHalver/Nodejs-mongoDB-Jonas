@@ -42,3 +42,12 @@ process.on("unhandledRejection", (error) => {
     process.exit(1);
   });
 });
+
+// Signal from heroku to shutdown the app every 24 hours
+process.on("SIGTERM", () => {
+  console.log("SIGTERM RECEIVED. Shutting down gracefully! 😊");
+  // Finish pending process before shutting down
+  server.close(() => {
+    console.log("Process terminated!");
+  });
+});

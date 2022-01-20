@@ -16,7 +16,10 @@ const tourRouter = require("./routes/tourRoutes");
 const userRouter = require("./routes/userRoutes");
 const bookingRouter = require("./routes/bookingRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
+
 const app = express();
+
+app.enable("trust proxy");
 
 app.set("view engine", "pug");
 app.set("views", path.join(__dirname, "views")); //prevents double slash or wrong relative path
